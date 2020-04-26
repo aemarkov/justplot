@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-import sys
+import os
 from PyQt5 import QtWidgets, uic
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -8,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 class MainWindow(QtWidgets.QMainWindow):
-    UI = 'ui/main.ui'
+    UI = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
     CSV_DELIMITER = ' '
     # Matplotlib default property cycle
     COLORS = [
@@ -67,9 +65,3 @@ class MainWindow(QtWidgets.QMainWindow):
         clr =  self.COLORS[self.color_index]
         self.color_index = (self.color_index + 1) % len(self.COLORS)
         return clr
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    app.exec()
