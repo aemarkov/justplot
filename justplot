@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
-from PyQt5 import QtWidgets
-from libjustplot import MainWindow
+from libjustplot import main
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    app.exec()
+    main()
