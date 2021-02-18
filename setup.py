@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-from setuptools import setup
+import setuptools
 
-setup(
+setuptools.setup(
     name='JustPlot',
     version='0.1',
-    license='MIT'
+    license='MIT',
     description='Simplt data plotter with GUI',
     author='Markov Alex',
     author_email='markovalex95@gmail.com',
-    packages=['libjustplot'],
+    packages=setuptools.find_packages(),
     scripts=['justplot'],
     include_package_data=True,
     python_requires='>=3.5',

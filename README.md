@@ -18,10 +18,24 @@ Supported file types:
 
 ## Installation
 
-1. Clone or download repo
-2. Install
+Note: this command will install package in Development Mode, i.e. it will reference local source
+
 ```sh
-pip3 install <path_to_repo>
+git clone https://github.com/Garrus007/justplot.git
+pip3 install -e justplot
+```
+
+### Troubleshooting
+
+Make sure all python dependencies are installed
+```sh
+# Ubuntu distro example
+sudo apt install python3 python3-pip python3-setuptools
+```
+
+If PyQt5 failed to install try to install from repo
+```sh
+sudo apt install python3-pyqt5
 ```
 
 ## How to use
