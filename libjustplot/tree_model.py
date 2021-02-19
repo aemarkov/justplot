@@ -2,27 +2,31 @@ import logging
 from dataclasses import dataclass
 from typing import Any, List, NoReturn, Union, cast
 
-from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
-from PyQt5 import QtCore
+from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex, pyqtSignal
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .model import FilePlot
 
+# Workaround to print QModelIndex for debug purposes
 def mi_repr(self: QModelIndex) -> str:
-    return f'Index({self.row()}, {self.column()}, {self.internalPointer()})'
+    return f'Index({self.row()}, {self.column()}, {type(self.internalPointer()).__name__})'
 QModelIndex.__repr__ = mi_repr
+
 
 @dataclass
 class _ChildData:
     """Internal data structure for child nodes (plots)"""
     parent: '_ParentData'
     plot: PlotDataItem
+    is_visible: bool
+
 
 class _ParentData:
     """Internal data structure for parent nodes (files)"""
     def __init__(self, file_plot: FilePlot):
         self.path = file_plot.path
-        self.children = [_ChildData(self, plot) for plot in file_plot.plots]
+        self.children = [_ChildData(self, plot, True) for plot in file_plot.plots]
+        self.is_visible = True
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, _ParentData):
@@ -31,13 +35,16 @@ class _ParentData:
 
 _NodeData = Union[None, _ParentData, _ChildData]
 
-def _get_data(index: QModelIndex) -> _NodeData:
-    return  cast(_ChildData, index.internalPointer())
 
-def _raise_data_err(data: Any) -> NoReturn:
-    raise RuntimeError(f'Graph viewmodel node has invalid data type {type(data)}')
+@dataclass(frozen=True)
+class PlotVisibleChanged:
+    """Struct used to notify visibility changes"""
+    is_visible: bool
+    plot: PlotDataItem
 
-class GraphTreeModel(QAbstractItemModel):
+class PlotTreeModel(QAbstractItemModel):
+
+    plot_visible_changed = pyqtSignal(PlotVisibleChanged)
 
     """
     Model to store plot data: list of files with list of plots (data series)
@@ -82,21 +89,49 @@ class GraphTreeModel(QAbstractItemModel):
         if not index.isValid():
             return None
 
-        if role != Qt.DisplayRole:
-            return None
-
         data = _get_data(index)
+
         if isinstance(data, _ParentData):
-            return data.path.name
+            display = data.path.name
         elif isinstance(data, _ChildData):
-            return data.plot.name()
+            display = data.plot.name()
         else:
             _raise_data_err(data)
 
+        if role == Qt.DisplayRole:
+            return display
+        elif role == Qt.CheckStateRole:
+            return _checked(data.is_visible)
+
+
+    def setData(self, index: QModelIndex, value: Any, role: int) -> bool:
+        if not index.isValid():
+            return False
+        if role != Qt.CheckStateRole:
+            return False
+
+        data = _get_data(index)
+        if isinstance(data, _ParentData):
+            data.is_visible = value == Qt.Checked
+            logging.debug('File node %s is checked (visible=%d)', index, data.is_visible)
+            # Check/uncheck all children of this node
+            for i, child in enumerate(data.children):
+                child_index = self.createIndex(i, 0, child)
+                self.setData(child_index, value, role)
+        elif isinstance(data, _ChildData):
+            data.is_visible = value == Qt.Checked
+            logging.debug('Plot node %s is checked (visible=%d)', index, data.is_visible)
+            self.plot_visible_changed.emit(PlotVisibleChanged(data.is_visible, data.plot))
+        else:
+            _raise_data_err(data)
+
+        self.dataChanged.emit(index, index)
+        return True
+
+
     def headerData(self, section: int, orientation: Qt.Orientation,
             role: int) -> Any:
-        # logging.debug('headerData(), section=%d, orientation=%d', section, orientation)
-        if orientation != QtCore.Qt.Horizontal or role != QtCore.Qt.DisplayRole:
+        if orientation != Qt.Horizontal or role != Qt.DisplayRole:
             return 'Plots'
 
     def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
@@ -123,3 +158,18 @@ class GraphTreeModel(QAbstractItemModel):
             return self.createIndex(index.row(), index.column(), data.parent)
         else:
             _raise_data_err(data)
+
+    def flags(self, index: QModelIndex):
+        if not index.isValid():
+            return Qt.NoItemFlags
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+
+
+def _get_data(index: QModelIndex) -> _NodeData:
+    return  cast(_ChildData, index.internalPointer())
+
+def _raise_data_err(data: Any) -> NoReturn:
+    raise RuntimeError(f'Graph viewmodel node has invalid data type {type(data)}')
+
+def _checked(checked: bool) -> int:
+    return int(Qt.Checked if checked else Qt.Unchecked)

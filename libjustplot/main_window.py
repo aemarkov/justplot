@@ -14,7 +14,7 @@ import pyqtgraph as pg
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .exception import PlotError
-from .tree_model import GraphTreeModel
+from .tree_model import PlotTreeModel, PlotVisibleChanged
 from .model import FilePlot
 
 class MainWindow(QMainWindow):
@@ -49,7 +49,8 @@ class MainWindow(QMainWindow):
         self.btnAddPlot.clicked.connect(self.add_plot_slot)
         self.btnDeletePlot.clicked.connect(self.delete_plot_slot)
 
-        self.model = GraphTreeModel()
+        self.model = PlotTreeModel()
+        self.model.plot_visible_changed.connect(self.plot_visible_changed_slot)
         self.treeView.setModel(self.model)
 
     def add_plot_slot(self):
@@ -68,6 +69,15 @@ class MainWindow(QMainWindow):
 
     def delete_plot_slot(self):
         print('remove')
+
+    def plot_visible_changed_slot(self, arg: PlotVisibleChanged):
+        # TODO: Maybe it is better to use Model/View approach
+        if arg.is_visible:
+            logging.info('Hide plot %s', arg.plot.name())
+            self.plotWidget.addItem(arg.plot)
+        else:
+            logging.info('Show plot %s', arg.plot.name())
+            self.plotWidget.removeItem(arg.plot)
 
     def add_csv_data(self, path: Path):
         logging.info('Loading file %s', path)
