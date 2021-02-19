@@ -1,6 +1,7 @@
 import os
 import logging
-from typing import Optional
+from typing import Optional, Sequence
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -10,8 +11,11 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
+from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .exception import PlotError
+from .tree_model import GraphTreeModel
+from .model import FilePlot
 
 class MainWindow(QMainWindow):
     UI = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
@@ -42,17 +46,18 @@ class MainWindow(QMainWindow):
         self.plotWidget.addLegend()
         self.color_index = 0
 
-        self.data = {}
-
         self.btnAddPlot.clicked.connect(self.add_plot_slot)
         self.btnDeletePlot.clicked.connect(self.delete_plot_slot)
+
+        self.model = GraphTreeModel()
+        self.treeView.setModel(self.model)
 
     def add_plot_slot(self):
         logging.info('Show open log file dialog')
         try:
             fname = QFileDialog.getOpenFileName(self, 'Open file', filter="CSV (*.*)")[0]
             if fname != '':
-                self.add_csv_data(fname)
+                self.add_csv_data(Path(fname))
         except PlotError as e:
             self.show_dialog('Failed to plot data from file: {}'.format(str(e)),
                 icon=QMessageBox.Warning)
@@ -64,34 +69,38 @@ class MainWindow(QMainWindow):
     def delete_plot_slot(self):
         print('remove')
 
-    def add_csv_data(self, fname: str):
-        logging.info('Loading file %s', fname)
+    def add_csv_data(self, path: Path):
+        logging.info('Loading file %s', path)
 
         if self.CSV_DELIMITER is None:
             logging.debug('Delimeter: any whitespace')
-            data =  pd.read_csv(fname, delim_whitespace=True)
+            data =  pd.read_csv(path, delim_whitespace=True)
         else:
             logging.debug('Delimeter: "%s"', self.CSV_DELIMITER)
-            data =  pd.read_csv(fname, sep=self.CSV_DELIMITER)
+            data =  pd.read_csv(path, sep=self.CSV_DELIMITER)
 
-        self.data[fname] = data
-        self.plot_dataframe(data)
+        plots = self.plot_dataframe(data)
+        self.model.add_file(FilePlot(path, plots))
 
-    def plot_dataframe(self, data: pd.DataFrame) -> None:
+    def plot_dataframe(self, data: pd.DataFrame) -> Sequence[PlotDataItem]:
         x = data.iloc[:,0]
         nrows, ncols = data.shape
         logging.debug('Table size: columns=%d, rows=%d', ncols, nrows)
-        logging.debug('Table title: %s', data.columns[0])
         if ncols < 2:
             err = 'Table should contain at least two columns (X, Y) to be plotted'
             logging.error(err)
             raise PlotError(err)
-        
+
+        x_label = data.columns[0]
+
+        plots = []
         for i in range(1, data.shape[1]):
             yi = data.iloc[:,i]
-            label = data.columns[i]
+            label = f'{data.columns[i]}({x_label})'
             pen = pg.mkPen(color=self.next_color(), width=self.PEN_WIDTH)
-            self.plotWidget.plot(x, yi, name=label, pen=pen)
+            item = self.plotWidget.plot(x, yi, name=label, pen=pen)
+            plots.append(item)
+        return plots
 
     def next_color(self)->str:
         clr =  self.COLORS[self.color_index]
