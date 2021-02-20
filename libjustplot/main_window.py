@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         logging.info('MainWindow initialization')
         super().__init__(*args, **kwargs)
         uic.loadUi(self.UI, self)
+        self.showMaximized()
 
         # Plot settings
         # self.plotWidget.getPlotItem().setAspectLocked(True)
