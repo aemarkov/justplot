@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, List, NoReturn, Union, cast
+from typing import Any, Callable, List, NoReturn, Sequence, Union, cast
 
 from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex, pyqtSignal
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
@@ -66,6 +66,32 @@ class PlotTreeModel(QAbstractItemModel):
         self._files.append(_ParentData(file))
         self.endInsertRows()
 
+    def delete_plot(self, index: QModelIndex):
+        logging.debug('Delete plot with index %s', index)
+        data = _get_data(index)
+
+        parent = index.parent()
+        if isinstance(data, _ParentData):
+            # Notify view to remove all children plots
+            self.beginRemoveRows(parent, index.row(), index.row())
+            for child in data.children:
+                self.visibility_changed(False, child.plot)
+            self._files.remove(data)
+            self.endRemoveRows()
+        elif isinstance(data, _ChildData):
+            # Get parent and remove parent from childre
+            parent_data = _get_data(parent)
+            if not isinstance(parent_data, _ParentData):
+                _raise_data_err(parent_data)
+
+            self.beginRemoveRows(parent, index.row(), index.row())
+            self.visibility_changed(False, data.plot)
+            parent_data.children.remove(data)
+            self.endRemoveRows()
+        else:
+            _raise_data_err(data)
+
+
     def rowCount(self, parent: QModelIndex) -> int:
         if parent == QModelIndex():
             return len(self._files)
@@ -115,13 +141,12 @@ class PlotTreeModel(QAbstractItemModel):
             data.is_visible = value == Qt.Checked
             logging.debug('File node %s is checked (visible=%d)', index, data.is_visible)
             # Check/uncheck all children of this node
-            for i, child in enumerate(data.children):
-                child_index = self.createIndex(i, 0, child)
+            for child_index in self._get_children_index(data):
                 self.setData(child_index, value, role)
         elif isinstance(data, _ChildData):
             data.is_visible = value == Qt.Checked
             logging.debug('Plot node %s is checked (visible=%d)', index, data.is_visible)
-            self.plot_visible_changed.emit(PlotVisibleChanged(data.is_visible, data.plot))
+            self.visibility_changed(data.is_visible, data.plot)
         else:
             _raise_data_err(data)
 
@@ -164,6 +189,11 @@ class PlotTreeModel(QAbstractItemModel):
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
 
+    def _get_children_index(self, data: _ParentData) -> Sequence[QModelIndex]:
+        return [self.createIndex(i, 0, child) for i, child in enumerate(data.children)]
+
+    def visibility_changed(self, is_visible: bool, plot: PlotDataItem):
+        self.plot_visible_changed.emit(PlotVisibleChanged(is_visible, plot))
 
 def _get_data(index: QModelIndex) -> _NodeData:
     return  cast(_ChildData, index.internalPointer())

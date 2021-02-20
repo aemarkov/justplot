@@ -3,13 +3,13 @@ import logging
 from typing import Optional, Sequence
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pandas.errors
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
-from pyqtgraph import PlotWidget, plot
+from PyQt5.QtCore import QItemSelectionModel
+from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
@@ -18,6 +18,10 @@ from .tree_model import PlotTreeModel, PlotVisibleChanged
 from .model import FilePlot
 
 class MainWindow(QMainWindow):
+
+    plotWidget: PlotWidget
+    selection: QItemSelectionModel
+
     UI = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
     CSV_DELIMITER: Optional[str] = None
     # Matplotlib default property cycle
@@ -50,8 +54,9 @@ class MainWindow(QMainWindow):
         self.btnDeletePlot.clicked.connect(self.delete_plot_slot)
 
         self.model = PlotTreeModel()
-        self.model.plot_visible_changed.connect(self.plot_visible_changed_slot)
         self.treeView.setModel(self.model)
+        self.selection = self.treeView.selectionModel()
+        self.model.plot_visible_changed.connect(self.plot_visible_changed_slot)
 
     def add_plot_slot(self):
         logging.info('Show open log file dialog')
@@ -68,15 +73,15 @@ class MainWindow(QMainWindow):
                 details=str(e), icon=QMessageBox.Warning)
 
     def delete_plot_slot(self):
-        print('remove')
+        self.model.delete_plot(self.selection.currentIndex())
 
     def plot_visible_changed_slot(self, arg: PlotVisibleChanged):
         # TODO: Maybe it is better to use Model/View approach
         if arg.is_visible:
-            logging.info('Hide plot %s', arg.plot.name())
+            logging.info('Add plot %s', arg.plot.name())
             self.plotWidget.addItem(arg.plot)
         else:
-            logging.info('Show plot %s', arg.plot.name())
+            logging.info('Delete plot %s', arg.plot.name())
             self.plotWidget.removeItem(arg.plot)
 
     def add_csv_data(self, path: Path):
