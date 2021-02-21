@@ -68,8 +68,11 @@ class PlotTreeModel(QAbstractItemModel):
 
     def delete_plot(self, index: QModelIndex):
         logging.debug('Delete plot with index %s', index)
-        data = _get_data(index)
 
+        if not index.isValid():
+            return
+
+        data = _get_data(index)
         parent = index.parent()
         if isinstance(data, _ParentData):
             # Notify view to remove all children plots
@@ -83,6 +86,10 @@ class PlotTreeModel(QAbstractItemModel):
             parent_data = _get_data(parent)
             if not isinstance(parent_data, _ParentData):
                 _raise_data_err(parent_data)
+
+            if index.row() >= len(parent_data.children):
+                logging.warn('Selected index is out of range')
+                return
 
             self.beginRemoveRows(parent, index.row(), index.row())
             self.visibility_changed(False, data.plot)
