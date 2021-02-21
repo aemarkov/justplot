@@ -7,14 +7,19 @@ button quickly and easy without complicated GUI and lot of actions
 
 ## Features
 Current status:
- - [X] Just plot the graph
- - [ ] Mathematical operations on data
- - [ ] Graph visual settings
- - [ ] Multiple graph panes
+ - [X] Just plot the graphs from multiple files
+ - [X] Display loaded files and data series in the tree view
+ - [x] Hide, show and delete data series and files
+ - [x] Save the last directory in the Open File dialog (I thought that OS/Qt should do this automatically)
+ - [ ] Command line interface
  - [ ] Graph export as image
+ - [ ] Mathematical operations on data
+ - [ ] Graph visual settings (?)
+ - [ ] Multiple graph panes (?)
 
 Supported file types:
- - [x] CSV with space separator
+ - [x] CSV with any whitespace separator
+ - [ ] Choose separator
 
 ## Installation
 
