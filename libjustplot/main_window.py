@@ -12,11 +12,13 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
 from PyQt5.QtCore import QItemSelectionModel
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
+from pyqtgraph.functions import Color
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .exception import PlotError
 from .tree_model import PlotTreeModel, PlotVisibleChanged
 from .model import FilePlot
+from .color_picker import ColorPicker
 
 class MainWindow(QMainWindow):
 
@@ -25,18 +27,6 @@ class MainWindow(QMainWindow):
 
     UI = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
     CSV_DELIMITER: Optional[str] = None
-    # Matplotlib default property cycle
-    COLORS = [
-        '#1f77b4',
-        '#ff7f0e',
-        '#2ca02c',
-        '#d62728',
-        '#9467bd',
-        '#8c564b',
-        '#e377c2',
-        '#7f7f7f',
-        '#bcbd22',
-        '#17becf']
     PEN_WIDTH=2
 
     def __init__(self, default_files: Sequence[str] = [], *args, **kwargs):
@@ -50,10 +40,11 @@ class MainWindow(QMainWindow):
         self.plotWidget.setBackground('w')
         self.plotWidget.showGrid(x=True, y=True)
         self.plotWidget.addLegend()
-        self.color_index = 0
 
         self.btnAddPlot.clicked.connect(self.add_plot_slot)
         self.btnDeletePlot.clicked.connect(self.delete_plot_slot)
+
+        self._color = ColorPicker()
 
         self.model = PlotTreeModel()
         self.treeView.setModel(self.model)
@@ -129,15 +120,10 @@ class MainWindow(QMainWindow):
         for i in range(1, data.shape[1]):
             yi = data.iloc[:,i]
             label = f'{data.columns[i]}({x_label})'
-            pen = pg.mkPen(color=self._next_color(), width=self.PEN_WIDTH)
+            pen = pg.mkPen(color=self._color.next_color(), width=self.PEN_WIDTH)
             item = self.plotWidget.plot(x, yi, name=label, pen=pen)
             plots.append(item)
         return plots
-
-    def _next_color(self)->str:
-        clr =  self.COLORS[self.color_index]
-        self.color_index = (self.color_index + 1) % len(self.COLORS)
-        return clr
 
     def _show_dialog(self, text: str, details: str = None, icon: QMessageBox.Icon = QMessageBox.Information):
         msg = QMessageBox()
