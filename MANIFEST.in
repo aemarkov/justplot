@@ -1,2 +1,3 @@
 include libjustplot/ui/*.ui
 include README.md
+include img/*

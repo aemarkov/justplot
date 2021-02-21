@@ -41,6 +41,11 @@ Supported file types:
 
 ## Installation
 
+```sh
+pip install justplot-qt
+```
+
+### Install from sources
 Note: this command will install package in Development Mode, i.e. it will reference local source
 
 ```sh
