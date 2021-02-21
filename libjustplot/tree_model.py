@@ -1,15 +1,18 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, List, NoReturn, Sequence, Union, cast
+from typing import Any, List, NoReturn, Sequence, Union, cast
 
 from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex, pyqtSignal
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .model import FilePlot
 
+
 # Workaround to print QModelIndex for debug purposes
 def mi_repr(self: QModelIndex) -> str:
     return f'Index({self.row()}, {self.column()}, {type(self.internalPointer()).__name__})'
+
+
 QModelIndex.__repr__ = mi_repr
 
 
@@ -33,6 +36,7 @@ class _ParentData:
             return False
         return self.path == o.path and self.children == o.children
 
+
 _NodeData = Union[None, _ParentData, _ChildData]
 
 
@@ -41,6 +45,7 @@ class PlotVisibleChanged:
     """Struct used to notify visibility changes"""
     is_visible: bool
     plot: PlotDataItem
+
 
 class PlotTreeModel(QAbstractItemModel):
 
@@ -98,7 +103,6 @@ class PlotTreeModel(QAbstractItemModel):
         else:
             _raise_data_err(data)
 
-
     def rowCount(self, parent: QModelIndex) -> int:
         if parent == QModelIndex():
             return len(self._files)
@@ -117,7 +121,6 @@ class PlotTreeModel(QAbstractItemModel):
         data = _get_data(parent)
         return 1 if data is not None else 0
 
-
     def data(self, index: QModelIndex, role: int) -> Any:
         if not index.isValid():
             return None
@@ -135,7 +138,6 @@ class PlotTreeModel(QAbstractItemModel):
             return display
         elif role == Qt.CheckStateRole:
             return _checked(data.is_visible)
-
 
     def setData(self, index: QModelIndex, value: Any, role: int) -> bool:
         if not index.isValid():
@@ -159,7 +161,6 @@ class PlotTreeModel(QAbstractItemModel):
 
         self.dataChanged.emit(index, index)
         return True
-
 
     def headerData(self, section: int, orientation: Qt.Orientation,
             role: int) -> Any:
@@ -202,11 +203,14 @@ class PlotTreeModel(QAbstractItemModel):
     def visibility_changed(self, is_visible: bool, plot: PlotDataItem):
         self.plot_visible_changed.emit(PlotVisibleChanged(is_visible, plot))
 
+
 def _get_data(index: QModelIndex) -> _NodeData:
-    return  cast(_ChildData, index.internalPointer())
+    return cast(_ChildData, index.internalPointer())
+
 
 def _raise_data_err(data: Any) -> NoReturn:
     raise RuntimeError(f'Graph viewmodel node has invalid data type {type(data)}')
+
 
 def _checked(checked: bool) -> int:
     return int(Qt.Checked if checked else Qt.Unchecked)

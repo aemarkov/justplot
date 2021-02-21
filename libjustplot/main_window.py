@@ -12,13 +12,13 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
 from PyQt5.QtCore import QItemSelectionModel
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
-from pyqtgraph.functions import Color
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
 
 from .exception import PlotError
 from .tree_model import PlotTreeModel, PlotVisibleChanged
 from .model import FilePlot
 from .color_picker import ColorPicker
+
 
 class MainWindow(QMainWindow):
 
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
 
     UI = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
     CSV_DELIMITER: Optional[str] = None
-    PEN_WIDTH=2
+    PEN_WIDTH = 2
 
     def __init__(self, default_files: Sequence[str] = [], *args, **kwargs):
         logging.info('MainWindow initialization')
@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
     def _load_and_plot_file(self, path: str):
         try:
             _path = Path(path)
-            data = self._load_csv_file(path)
+            data = self._load_csv_file(_path)
             plots = self._plot_dataframe(data)
             self.model.add_file(FilePlot(_path, plots))
         except FileNotFoundError as e:
@@ -100,13 +100,13 @@ class MainWindow(QMainWindow):
 
         if self.CSV_DELIMITER is None:
             logging.debug('Delimeter: any whitespace')
-            return  pd.read_csv(path, delim_whitespace=True)
+            return pd.read_csv(path, delim_whitespace=True)
         else:
             logging.debug('Delimeter: "%s"', self.CSV_DELIMITER)
-            return  pd.read_csv(path, sep=self.CSV_DELIMITER)
+            return pd.read_csv(path, sep=self.CSV_DELIMITER)
 
     def _plot_dataframe(self, data: pd.DataFrame) -> Sequence[PlotDataItem]:
-        x = data.iloc[:,0]
+        x = data.iloc[:, 0]
         nrows, ncols = data.shape
         logging.debug('Table size: columns=%d, rows=%d', ncols, nrows)
         if ncols < 2:
@@ -118,14 +118,16 @@ class MainWindow(QMainWindow):
 
         plots = []
         for i in range(1, data.shape[1]):
-            yi = data.iloc[:,i]
+            yi = data.iloc[:, i]
             label = f'{data.columns[i]}({x_label})'
             pen = pg.mkPen(color=self._color.next_color(), width=self.PEN_WIDTH)
             item = self.plotWidget.plot(x, yi, name=label, pen=pen)
             plots.append(item)
         return plots
 
-    def _show_dialog(self, text: str, details: str = None, icon: QMessageBox.Icon = QMessageBox.Information):
+    def _show_dialog(self, text: str, details: str = None,
+            icon: QMessageBox.Icon = QMessageBox.Information):
+
         msg = QMessageBox()
         msg.setIcon(icon)
         msg.setWindowTitle('JustPlot')
