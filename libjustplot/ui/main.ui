@@ -55,12 +55,18 @@
          <property name="text">
           <string>Add</string>
          </property>
+         <property name="shortcut">
+          <string>Ctrl+O</string>
+         </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="btnDeletePlot">
          <property name="text">
           <string>Delete</string>
+         </property>
+         <property name="shortcut">
+          <string>Del</string>
          </property>
         </widget>
        </item>
