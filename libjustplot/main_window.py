@@ -60,9 +60,9 @@ class MainWindow(QMainWindow):
 
     def add_plot_slot(self):
         logging.info('Show open log file dialog')
-        fname = QFileDialog.getOpenFileName(self, 'Open file', filter="CSV (*.*)")[0]
-        if fname != '':
-            self._load_and_plot_file(fname)
+        files = QFileDialog.getOpenFileNames(self, 'Open file', filter="CSV (*.*)")[0]
+        for file in files:
+            self._load_and_plot_file(file)
 
     def delete_plot_slot(self):
         self.model.delete_plot(self.selection.currentIndex())
