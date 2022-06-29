@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
 
         self.btnAddPlot.clicked.connect(self.add_plot_slot)
         self.btnDeletePlot.clicked.connect(self.delete_plot_slot)
+        self.btnDeleteall.clicked.connect(self.delete_all_slot)
 
         self._color = ColorPicker()
 
@@ -50,6 +51,7 @@ class MainWindow(QMainWindow):
         self.treeView.setModel(self.model)
         self.selection = self.treeView.selectionModel()
         self.model.plot_visible_changed.connect(self.plot_visible_changed_slot)
+        self.model.plot_cleared.connect(self.plot_cleared_slot)
 
         for file in default_files:
             self._load_and_plot_file(file)
@@ -65,6 +67,9 @@ class MainWindow(QMainWindow):
     def delete_plot_slot(self):
         self.model.delete_plot(self.selection.currentIndex())
 
+    def delete_all_slot(self):
+        self.model.delete_all()
+
     def plot_visible_changed_slot(self, arg: PlotVisibleChanged):
         # TODO: Maybe it is better to use Model/View approach
         if arg.is_visible:
@@ -73,6 +78,9 @@ class MainWindow(QMainWindow):
         else:
             logging.info('Delete plot %s', arg.plot.name())
             self.plotWidget.removeItem(arg.plot)
+
+    def plot_cleared_slot(self):
+        self.plotWidget.clear()
 
     # --- private --------------------------------------------------------------
 

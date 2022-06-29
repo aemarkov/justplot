@@ -50,6 +50,7 @@ class PlotVisibleChanged:
 class PlotTreeModel(QAbstractItemModel):
 
     plot_visible_changed = pyqtSignal(PlotVisibleChanged)
+    plot_cleared = pyqtSignal()
 
     """
     Model to store plot data: list of files with list of plots (data series)
@@ -102,6 +103,14 @@ class PlotTreeModel(QAbstractItemModel):
             self.endRemoveRows()
         else:
             _raise_data_err(data)
+
+
+    def delete_all(self):
+        logging.debug('Delete all plots')
+        self.beginResetModel()
+        self._files = []
+        self.plot_clear()
+        self.endResetModel()
 
     def rowCount(self, parent: QModelIndex) -> int:
         if parent == QModelIndex():
@@ -202,6 +211,9 @@ class PlotTreeModel(QAbstractItemModel):
 
     def visibility_changed(self, is_visible: bool, plot: PlotDataItem):
         self.plot_visible_changed.emit(PlotVisibleChanged(is_visible, plot))
+
+    def plot_clear(self):
+        self.plot_cleared.emit()
 
 
 def _get_data(index: QModelIndex) -> _NodeData:
