@@ -23,14 +23,23 @@ optional arguments:
 You can run `justplot` from command line and provide list of files to plot or
 choose files via GUI.
 
+### Hotkeys in GUI
+| Function       | Hotkey |
+|----------------|--------|
+| Open file      | CTR+O  |
+| Delete plot    | Del    |
+
+
 ## Features
 Current status:
  - [X] Just plot the graphs from multiple files
  - [X] Display loaded files and data series in the tree view
  - [x] Hide, show and delete data series and files
  - [x] Command line interface
- - [ ] Save the last directory in the Open File dialog (I thought that OS/Qt should do this automatically)
- - [ ] Graph export as image
+ - [x] Save the last directory in the Open File dialog (I thought that OS/Qt should do this automatically)
+ - [*] Graph export as image (It can be done by pyqtgraph itself by right-clicking graph pane)
+ - [x] Hotkeys
+ - [x] Multiple files selection in open dialog
  - [ ] Mathematical operations on data
  - [ ] Graph visual settings (?)
  - [ ] Multiple graph panes (?)

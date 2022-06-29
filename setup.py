@@ -8,7 +8,7 @@ README = Path('README.md').read_text()
 
 setuptools.setup(
     name='justplot-qt',
-    version='0.1.0',
+    version='0.2.0',
     description='Simplt data plotter with GUI',
     long_description_content_type='text/markdown',
     long_description=README,
@@ -23,7 +23,7 @@ setuptools.setup(
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.6",
-        "Development Status :: 3 - Alpha"
+        "Development Status :: 5 - Production/Stable"
     ],
     license='MIT',
     packages=setuptools.find_packages(),
