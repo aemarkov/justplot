@@ -9,7 +9,7 @@ import pandas.errors
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QFileDialog
-from PyQt5.QtCore import QItemSelectionModel
+from PyQt5.QtCore import QItemSelectionModel, QSettings
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 from pyqtgraph.graphicsItems.PlotDataItem import PlotDataItem
@@ -19,6 +19,7 @@ from .tree_model import PlotTreeModel, PlotVisibleChanged
 from .model import FilePlot
 from .color_picker import ColorPicker
 
+OPEN_DIR_KEY = 'open_dir'
 
 class MainWindow(QMainWindow):
 
@@ -60,7 +61,21 @@ class MainWindow(QMainWindow):
 
     def add_plot_slot(self):
         logging.info('Show open log file dialog')
-        files = QFileDialog.getOpenFileNames(self, 'Open file', filter="CSV (*.*)")[0]
+
+        # Restore last directory
+        settings = QSettings()
+        open_dir = settings.value(OPEN_DIR_KEY)
+        logging.debug('Restore open directory: %s', open_dir)
+
+        files = QFileDialog.getOpenFileNames(self, 'Open file', open_dir,
+            filter="CSV (*.*)")[0]
+
+        # Store last directory
+        if len(files) > 0:
+            directory = os.path.dirname(files[0])
+            settings.setValue(OPEN_DIR_KEY, directory)
+
+
         for file in files:
             self._load_and_plot_file(file)
 

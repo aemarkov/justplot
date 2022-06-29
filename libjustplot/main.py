@@ -12,6 +12,9 @@ def main():
     args = parser.parse_args()
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setApplicationName('justplot')
+    app.setOrganizationName('Markov')
+    app.setOrganizationDomain('markov.org')
     window = MainWindow(args.files)
     window.show()
     app.exec()
